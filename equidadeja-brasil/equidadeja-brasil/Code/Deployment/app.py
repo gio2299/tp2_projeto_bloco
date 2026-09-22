@@ -32,11 +32,9 @@ def carregar_corpus_txt():
 
 @st.cache_data
 def carregar_indicadores_ficticios():
-    # Amostra de fallback do TP1 para os indicadores do World Bank
     caminho = os.path.join('Sample Data', 'amostra_indicadores_genero.csv')
     if os.path.exists(caminho):
         return pd.read_csv(caminho)
-    # Dados de fallback caso o arquivo não exista
     dados = {
         'Ano': [2018, 2019, 2020, 2021, 2022],
         'Taxa de Participação Feminina (%)': [53.2, 54.1, 51.5, 52.8, 53.9],
@@ -49,7 +47,7 @@ df_noticias = carregar_noticias_csv()
 texto_corpus = carregar_corpus_txt()
 df_indicadores = carregar_indicadores_ficticios()
 
-# --- NAVEGAÇÃO POR ABAS (UNIFICANDO TP1 + TP2) ---
+# --- NAVEGAÇÃO POR ABAS ---
 aba1, aba2, aba3, aba4, aba5 = st.tabs([
     "📈 Indicadores (World Bank)", 
     "📊 Notícias (Beautiful Soup)", 
@@ -58,16 +56,30 @@ aba1, aba2, aba3, aba4, aba5 = st.tabs([
     "ℹ️ Sobre & ODS"
 ])
 
-# --- ABA 1: INDICADORES (DO TP1) ---
+# --- ABA 1: INDICADORES (CORRIGIDA) ---
 with aba1:
     st.header("Indicadores Oficiais de Gênero no Mercado de Trabalho")
     st.caption("Fonte dos dados exibidos: Amostra Local / World Bank Open Data")
     
-    st.subheader("Taxa de Participação na Força de Trabalho (%)")
-    st.dataframe(df_indicadores, use_container_width=True)
-    st.line_chart(df_indicadores.set_index('Ano'))
+    if not df_indicadores.empty:
+        st.subheader("Tabela de Indicadores")
+        st.dataframe(df_indicadores, use_container_width=True)
+        
+        # Identifica dinamicamente a coluna de ano para evitar erros de caixa (Ano/ano)
+        coluna_ano = [c for c in df_indicadores.columns if 'ano' in c.lower()]
+        
+        if coluna_ano:
+            col_ano = coluna_ano[0]
+            st.subheader("Evolução Temporal")
+            # Converte e define o índice com segurança
+            df_chart = df_indicadores.copy()
+            st.line_chart(df_chart.set_index(col_ano))
+        else:
+            st.line_chart(df_indicadores)
+    else:
+        st.warning("Nenhum indicador encontrado em Sample Data.")
 
-# --- ABA 2: NOTÍCIAS RASPADAS (DO TP2) ---
+# --- ABA 2: NOTÍCIAS RASPADAS ---
 with aba2:
     st.header("Notícias Extraídas via Web Scraping (Beautiful Soup)")
     if not df_noticias.empty:
@@ -76,7 +88,7 @@ with aba2:
     else:
         st.warning("Nenhum dado encontrado em Data/Processed. Execute primeiro o script 'coletor_noticias.py'.")
 
-# --- ABA 3: NUVEM DE PALAVRAS (DO TP2) ---
+# --- ABA 3: NUVEM DE PALAVRAS ---
 with aba3:
     st.header("Nuvem de Palavras dos Conteúdos Raspados")
     if texto_corpus:
@@ -88,7 +100,7 @@ with aba3:
     else:
         st.warning("Arquivo 'corpus_noticias.txt' não encontrado em Data/Processed.")
 
-# --- ABA 4: UPLOAD & DOWNLOAD (DO TP2) ---
+# --- ABA 4: UPLOAD & DOWNLOAD ---
 with aba4:
     st.header("Serviço de Upload e Download de Arquivos")
     col1, col2 = st.columns(2)
